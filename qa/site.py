@@ -8,6 +8,9 @@ import httpx
 
 USER_AGENT = "telmodasilva-qa (+https://github.com/LusoCryptoLabs/telmodasilva-qa)"
 
+# The site bakes its public origin into canonicals, sitemap and share images, wherever it runs.
+CANONICAL_ORIGIN = "https://telmodasilva.pt"
+
 # A short list of pages that stand for each template, so browser checks stay fast.
 KEY_PAGES = [
     "/",

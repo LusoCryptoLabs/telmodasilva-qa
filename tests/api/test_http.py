@@ -3,6 +3,8 @@
 import httpx
 import pytest
 
+from qa.site import CANONICAL_ORIGIN
+
 pytestmark = pytest.mark.api
 
 SECURITY_HEADERS = {
@@ -13,6 +15,7 @@ SECURITY_HEADERS = {
 }
 
 
+@pytest.mark.usefixtures("production_only")
 def test_http_redirects_to_https(site: str) -> None:
     insecure = site.replace("https://", "http://", 1)
     response = httpx.get(f"{insecure}/sobre", follow_redirects=False, timeout=30)
@@ -20,6 +23,7 @@ def test_http_redirects_to_https(site: str) -> None:
     assert response.headers["location"] == f"{site}/sobre"
 
 
+@pytest.mark.usefixtures("production_only")
 def test_www_redirects_to_apex_keeping_the_path(site: str) -> None:
     www = site.replace("https://", "https://www.", 1)
     response = httpx.get(f"{www}/sobre", follow_redirects=False, timeout=30)
@@ -27,6 +31,7 @@ def test_www_redirects_to_apex_keeping_the_path(site: str) -> None:
     assert response.headers["location"] == f"{site}/sobre"
 
 
+@pytest.mark.usefixtures("production_only")
 @pytest.mark.parametrize(("header", "expected"), SECURITY_HEADERS.items())
 def test_security_header(http: httpx.Client, header: str, expected: str) -> None:
     assert expected in http.get("/").headers.get(header, "")
@@ -36,21 +41,21 @@ def test_unknown_page_returns_404(http: httpx.Client) -> None:
     assert http.get("/this-page-does-not-exist").status_code == 404
 
 
-def test_robots_allows_crawling_and_points_to_the_sitemap(http: httpx.Client, site: str) -> None:
+def test_robots_allows_crawling_and_points_to_the_sitemap(http: httpx.Client) -> None:
     robots = http.get("/robots.txt")
     assert robots.status_code == 200
     lines = [line.strip() for line in robots.text.splitlines()]
     assert "Disallow: /" not in lines
-    assert f"Sitemap: {site}/sitemap.xml" in lines
+    assert f"Sitemap: {CANONICAL_ORIGIN}/sitemap.xml" in lines
 
 
-def test_sitemap_lists_only_this_site(http: httpx.Client, site: str) -> None:
+def test_sitemap_lists_only_this_site(http: httpx.Client) -> None:
     sitemap = http.get("/sitemap.xml")
     assert sitemap.status_code == 200
     assert "xml" in sitemap.headers["content-type"]
     locations = [part.split("</loc>")[0].strip() for part in sitemap.text.split("<loc>")[1:]]
     assert len(locations) >= 10
-    assert all(loc.startswith(site) for loc in locations)
+    assert all(loc.startswith(CANONICAL_ORIGIN) for loc in locations)
     assert len(locations) == len(set(locations)), "duplicate URLs in the sitemap"
 
 

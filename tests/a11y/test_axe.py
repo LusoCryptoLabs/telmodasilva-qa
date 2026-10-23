@@ -18,7 +18,6 @@ WCAG_AA = {"runOnly": {"type": "tag", "values": ["wcag2a", "wcag2aa", "wcag21a",
 KNOWN = {
     "color-contrast": "the light suffix in the logo is below 4.5:1",
     "link-in-text-block": "links inside paragraphs are told apart by colour only",
-    "label": "the code editor of the graded challenge has no accessible name",
 }
 
 

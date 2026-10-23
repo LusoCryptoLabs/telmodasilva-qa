@@ -1,14 +1,14 @@
 """Search and sharing metadata for every page in the sitemap."""
 
+from urllib.parse import urlsplit
+
 import httpx
 import pytest
 
 from qa.html_head import Head, parse_head
-from qa.site import locale_of, sitemap_paths
+from qa.site import CANONICAL_ORIGIN, locale_of, sitemap_paths
 
 pytestmark = pytest.mark.content
-
-KNOWN_EN_GAPS = "known: the /en pages share the Portuguese root layout"
 
 
 @pytest.fixture(scope="module")
@@ -28,10 +28,10 @@ def test_description(heads: dict[str, Head], sitemap_path: str) -> None:
     assert len(description) >= 50, f"only {len(description)} characters"
 
 
-def test_canonical_points_to_itself(heads: dict[str, Head], site: str, sitemap_path: str) -> None:
+def test_canonical_points_to_itself(heads: dict[str, Head], sitemap_path: str) -> None:
     canonical = heads[sitemap_path].canonical
     assert canonical, "missing canonical link"
-    assert canonical.rstrip("/") == f"{site}{sitemap_path}".rstrip("/")
+    assert canonical.rstrip("/") == f"{CANONICAL_ORIGIN}{sitemap_path}".rstrip("/")
 
 
 def test_one_h1(heads: dict[str, Head], sitemap_path: str) -> None:
@@ -43,23 +43,16 @@ def test_indexable(heads: dict[str, Head], sitemap_path: str) -> None:
     assert "noindex" not in (heads[sitemap_path].robots or "")
 
 
-def test_html_lang_matches_locale(
-    heads: dict[str, Head], sitemap_path: str, request: pytest.FixtureRequest
-) -> None:
-    locale = locale_of(sitemap_path)
-    if locale == "en":
-        request.applymarker(pytest.mark.xfail(strict=True, reason=KNOWN_EN_GAPS))
-    assert heads[sitemap_path].lang == locale
+def test_html_lang_matches_locale(heads: dict[str, Head], sitemap_path: str) -> None:
+    assert heads[sitemap_path].lang == locale_of(sitemap_path)
 
 
-def test_share_image(
-    heads: dict[str, Head], http: httpx.Client, sitemap_path: str, request: pytest.FixtureRequest
-) -> None:
-    if locale_of(sitemap_path) == "en":
-        request.applymarker(pytest.mark.xfail(strict=True, reason=KNOWN_EN_GAPS))
+def test_share_image(heads: dict[str, Head], http: httpx.Client, sitemap_path: str) -> None:
     image = heads[sitemap_path].og_image
     assert image, "missing og:image"
-    response = http.get(image, follow_redirects=True)
+    # Fetch it from the environment under test, not from the origin baked into the URL.
+    parts = urlsplit(image)
+    response = http.get(f"{parts.path}?{parts.query}" if parts.query else parts.path)
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("image/")
 

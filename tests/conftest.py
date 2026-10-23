@@ -5,7 +5,7 @@ import httpx
 import pytest
 from playwright.sync_api import BrowserContext, ConsoleMessage, Page, Route
 
-from qa.site import USER_AGENT, sitemap_paths
+from qa.site import CANONICAL_ORIGIN, USER_AGENT, sitemap_paths
 
 
 def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
@@ -19,6 +19,13 @@ def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
 @pytest.fixture(scope="session")
 def site(base_url: str) -> str:
     return base_url.rstrip("/")
+
+
+@pytest.fixture
+def production_only(site: str) -> None:
+    """Redirects and security headers live in the production proxy, not in the app."""
+    if site != CANONICAL_ORIGIN:
+        pytest.skip("production proxy behaviour")
 
 
 @pytest.fixture(scope="session")
