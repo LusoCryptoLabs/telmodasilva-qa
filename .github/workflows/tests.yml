@@ -1,0 +1,68 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --locked
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv sync --locked
+      - name: Install Chromium
+        run: uv run playwright install --with-deps chromium
+      # No traces or screenshots: the editor of the graded challenge would show the solution.
+      - name: Run the suite against production
+        env:
+          CHALLENGE_SOLUTION: ${{ secrets.CHALLENGE_SOLUTION }}
+        run: >
+          uv run pytest -n 4
+          --html=report/index.html --self-contained-html
+          --junitxml=report/junit.xml
+      - name: Job summary
+        if: always()
+        run: uv run python scripts/summary.py report/junit.xml >> "$GITHUB_STEP_SUMMARY"
+      - name: Keep the report for Pages
+        if: always() && github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: report
+
+  report:
+    needs: test
+    if: always() && github.event_name != 'pull_request' && needs.test.result != 'cancelled'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4

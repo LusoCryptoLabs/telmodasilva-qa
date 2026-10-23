@@ -1,0 +1,37 @@
+[project]
+name = "telmodasilva-qa"
+version = "0.1.0"
+description = "Test automation for telmodasilva.pt: API contracts, page metadata, mobile layout, accessibility and end-to-end flows."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "axe-playwright-python>=0.1.4",
+    "httpx>=0.28",
+    "pytest>=8.3",
+    "pytest-html>=4.1",
+    "pytest-playwright>=0.7",
+    "pytest-xdist>=3.6",
+]
+
+[dependency-groups]
+dev = ["ruff>=0.8"]
+
+[tool.pytest.ini_options]
+base_url = "https://telmodasilva.pt"
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-ra --strict-markers"
+markers = [
+    "api: HTTP checks, no browser",
+    "content: metadata of every page in the sitemap",
+    "ui: layout and runtime checks in a browser",
+    "a11y: accessibility scan with axe-core",
+    "e2e: user flows from start to finish",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "PT", "SIM"]
