@@ -2,9 +2,8 @@
 
 [![tests](https://github.com/LusoCryptoLabs/telmodasilva-qa/actions/workflows/tests.yml/badge.svg)](https://github.com/LusoCryptoLabs/telmodasilva-qa/actions/workflows/tests.yml)
 
-Test automation for [telmodasilva.pt](https://telmodasilva.pt), my personal site and course
-library. Python, pytest and Playwright. It runs against production on every push and every
-morning at 06:17 UTC.
+Test automation for my personal site and course library. Python, pytest and Playwright. It
+runs against production on every push and every morning at 06:17 UTC.
 
 Latest report: https://lusocryptolabs.github.io/telmodasilva-qa/
 
