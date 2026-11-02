@@ -49,7 +49,7 @@ jobs:
         run: uv run python scripts/summary.py report/junit.xml >> "$GITHUB_STEP_SUMMARY"
       - name: Keep the report for Pages
         if: always() && github.event_name != 'pull_request'
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: report
 
